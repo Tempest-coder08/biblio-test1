@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <title>Historique</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            color: #000000;
+          
+            padding-bottom: 10px;
+        }
+        #profilsContainer, #history {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .entry, .date {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+        }
+        .entry {
+            background-color: #e0f7fa;
+            transition: background-color 0.3s;
+        }
+        .entry:hover {
+            background-color: #b2ebf2;
+        }
+        .date {
+            background-color: #ffe0b2;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+        button {
+            border: none;
+            background-color: transparent;
+            cursor: pointer;
+           
+            color: #4a90e2;
+        }
+        button:hover {
+            color: #007acc;
+        }
+        #h1btn {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .n23{
+            position: sticky;
+            top: 0px;
+            background-color: ghostwhite;
+            display: flex;
+             margin-bottom: 10px;
+             border-bottom: 1px solid #271bdf;
+             padding: 10px;
+           }
+           .n23{
+            padding-left: 2px;
+           }
+           .n23 h1{
+            margin: auto;
+           }
+        i {
+            font-size: 1.5em;
+        }
+        #btnr i{
+            font-size: xx-large;
+            font-weight: 600;
+            color: black;
+
+        }
+    </style>
+</head>
+<body>
+    <div class="n23">
+        <button id="btnr" onclick="goBack()"><i class="fa-solid fa-arrow-left"></i></button> 
+        <h1> Historique</h1>
+
+    </div>
+      
+     
+    <div id="h1btn">
+        <h2>Élèves inscrits à la bibliothèque</h2>
+        <button id="btndown" onclick="btndown()" style="display:none;"><i class="fa-solid fa-angle-down"></i></button>
+        <button id="btnup" onclick="btnup()" ><i class="fa-solid fa-angle-up"></i></button>
+    </div>
+    <div id="profilsContainer"></div>
+    
+    <div id="h1btn">
+        <h2>Historique des Livres</h2>
+        <button id="btndown1" onclick="btndown1()" style="display:none;"><i class="fa-solid fa-angle-down"></i></button>
+        <button id="btnup1" onclick="btnup1()"  ><i class="fa-solid fa-angle-up"></i></button>
+    </div>
+    <div id="history"></div>
+ 
+    <script>
+        const profiles = JSON.parse(localStorage.getItem('profiles')) || [];
+        const modifications = JSON.parse(localStorage.getItem("modifications")) || [];
+
+        function convertirDate(dateString) {
+            const [datePart, timePart] = dateString.split(' ');
+            if (!timePart) return new Date(NaN);
+            const [day, month, year] = datePart.split('/').map(Number);
+            const [hours, minutes, seconds] = timePart.split(':').map(Number);
+            return new Date(year, month - 1, day, hours, minutes, seconds);
+        }
+
+        function afficherProfils() {
+            const container = document.getElementById('profilsContainer');
+            container.innerHTML = '';
+
+            profiles.forEach(profile => {
+                const date = convertirDate(profile.time);
+                if (!isNaN(date)) {
+                    const dateString = `${date.getDate().toString().padStart(2, '0')}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getFullYear()}`;
+                    let dateDiv = document.getElementById(dateString);
+                    if (!dateDiv) {
+                        dateDiv = document.createElement('div');
+                        dateDiv.id = dateString;
+                        dateDiv.innerHTML = `<h3>${dateString}</h3>`;
+                        container.appendChild(dateDiv);
+                    }
+                    const p = document.createElement('p');
+                    p.textContent = `${profile.prenom} ${profile.nom} de la classe de ${profile.classe} - ${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
+                    dateDiv.appendChild(p);
+                }
+            });
+        }
+
+        function displayHistory() {
+            const historyDiv = document.getElementById('history');
+            historyDiv.innerHTML = '';
+            const grouped = groupByDate(modifications);
+
+            for (const [date, entries] of Object.entries(grouped)) {
+                const dateHeader = document.createElement('div');
+                dateHeader.classList.add('date');
+                dateHeader.textContent = date;
+                historyDiv.appendChild(dateHeader);
+
+                entries.forEach(entry => {
+                    const entryDiv = document.createElement('div');
+                    entryDiv.classList.add('entry');
+                    entryDiv.textContent = `${entry.action} - ${entry.time}`;
+                    historyDiv.appendChild(entryDiv);
+                });
+            }
+        }
+
+        function groupByDate(modifications) {
+            return modifications.reduce((acc, mod) => {
+                const date = mod.timestamp.split(' ')[0];
+                const time = mod.timestamp.split(' ')[1];
+                acc[date] = acc[date] || [];
+                acc[date].push({ action: mod.action, time: time });
+                return acc;
+            }, {});
+        }
+
+        function goBack() {
+            window.history.back();
+        }
+
+        function btndown() {
+            document.getElementById('profilsContainer').style.display = "block";
+            document.getElementById('btndown').style.display = "none";
+            document.getElementById('btnup').style.display = "block";
+        }
+
+        function btndown1() {
+            document.getElementById('history').style.display = "block";
+            document.getElementById('btndown1').style.display = "none";
+            document.getElementById('btnup1').style.display = "block";
+        }
+
+        function btnup() {
+            document.getElementById('profilsContainer').style.display = "none";
+            document.getElementById('btndown').style.display = "block";
+            document.getElementById('btnup').style.display = "none";
+        }
+
+        function btnup1() {
+            document.getElementById('history').style.display = "none";
+            document.getElementById('btndown1').style.display = "block";
+            document.getElementById('btnup1').style.display = "none";
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            displayHistory();
+            afficherProfils();
+        });
+    </script>
+</body>
+</html>

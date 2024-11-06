@@ -1,0 +1,126 @@
+let modifications = JSON.parse(localStorage.getItem("modifications")) || [];
+let nombre = parseInt(localStorage.getItem("nombre")) || 0;
+let paragraphCount = parseInt(localStorage.getItem("paragraphCount")) || 0; // Compteur de paragraphes
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadProfiles();
+});
+
+document.getElementById('addProfile').addEventListener('click', () => {
+    const nom = prompt("Entrez le nom :");
+    const prenom = prompt("Entrez le prénom :");
+    const ien = prompt("Entrez l'IEN :");
+    const classe = prompt("la classe de l'élève :");
+
+    if (nom && prenom && ien) {
+        const profile = { nom, prenom, classe, ien, time: new Date().toLocaleString(), paragraphs: [] };
+        saveProfile(profile);
+        displayProfile(profile);
+    } else {
+        alert("Tous les champs doivent être remplis !");
+    }
+});
+
+function saveProfile(profile) {
+    const profiles = JSON.parse(localStorage.getItem('profiles')) || [];
+    profiles.push(profile);
+    localStorage.setItem('profiles', JSON.stringify(profiles));
+}
+
+function loadProfiles() {
+    const profiles = JSON.parse(localStorage.getItem('profiles')) || [];
+    profiles.forEach(profile => {
+        displayProfile(profile);
+        profile.paragraphs.forEach(text => addParagraph(document.getElementById(profile.ien), text));
+    });
+}
+
+function displayProfile(profile) {
+    const profileDiv = document.createElement('div');
+    profileDiv.classList.add('profile');
+    profileDiv.id = profile.ien;
+
+    profileDiv.innerHTML = `
+        <h2> PRENOM : ${profile.prenom}</h2>
+        <h2> NOM : ${profile.nom} </h2>
+        <h2> IEN: ${profile.ien}   , CLASSE : ${profile.classe}</h2>
+        <button class="addParagraph">+</button>
+        <div class="paragraphs"></div>
+    `;
+    document.getElementById('profiles').appendChild(profileDiv);
+
+    profileDiv.querySelector('.addParagraph').addEventListener('click', () => {
+        const numlivre = prompt("le numero du livre");
+        const nomlivre = prompt("le nom du livre ");
+        const text = 'le livre : ' + numlivre + ' ' + nomlivre;
+        if (text) {
+            addParagraph(profileDiv, text);
+            profile.paragraphs.push(text);
+            paragraphCount++; // Incrémente le compteur
+            updateCounterDisplay(); // Met à jour l'affichage du compteur
+            localStorage.setItem("paragraphCount", paragraphCount);
+            updateProfilesInStorage(profile);
+        } else {
+            alert("Le champ ne peut pas être vide !");
+        }
+    });
+}
+
+function addParagraph(profileDiv, text) {
+    const paragraph = document.createElement('p');
+    paragraph.textContent = text;
+
+    const deleteBtn = document.createElement('span');
+    deleteBtn.textContent = 'rendre';
+    deleteBtn.classList.add('delete-btn');
+
+    deleteBtn.addEventListener('click', () => {
+        const code = prompt("entrer le code administratif : ");
+        const codevalide = 2000;
+        if (code == codevalide) {
+            profileDiv.querySelector('.paragraphs').removeChild(paragraph);
+            const profileID = profileDiv.id;
+
+            recordModification(`"${text}" par l'élève ${profileID} est rendu`);
+            let profiles = JSON.parse(localStorage.getItem('profiles')) || [];
+            profiles = profiles.map(p => {
+                if (p.ien === profileID) {
+                    p.paragraphs = p.paragraphs.filter(par => par !== text);
+                
+                return p;}
+            });
+            localStorage.setItem('profiles', JSON.stringify(profiles));
+            paragraphCount--; // Décrémente le compteur
+            updateCounterDisplay(); // Met à jour l'affichage du compteur
+            localStorage.setItem("paragraphCount", paragraphCount);
+        } else {
+            alert("le code est incorrect!");
+        }
+    });
+
+    recordModification(`L'élève ${profileDiv.id} a emprunté : ${text}`);
+    paragraph.appendChild(deleteBtn);
+    profileDiv.querySelector('.paragraphs').appendChild(paragraph);
+}
+
+function updateProfilesInStorage(updatedProfile) {
+    const profiles = JSON.parse(localStorage.getItem('profiles')) || [];
+    const updatedProfiles = profiles.map(p => {
+        if (p.ien === updatedProfile.ien) {
+            return updatedProfile;
+        }
+        return p;
+    });
+    localStorage.setItem('profiles', JSON.stringify(updatedProfiles));
+}
+
+function recordModification(action) {
+    const timestamp = new Date().toLocaleString();
+    modifications.push({ action, timestamp });
+    localStorage.setItem("modifications", JSON.stringify(modifications));
+}
+
+function updateCounterDisplay() {
+    // Mettez à jour l'affichage du compteur ici, par exemple :
+    document.getElementById('counter').textContent = `Total de paragraphes : ${paragraphCount}`;
+}

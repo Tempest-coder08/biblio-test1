@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion de Profils</title>
+    <style>
+         
+            body {
+                background-color: #f0f8ff;
+                font-family: Arial, sans-serif;
+            }
+            
+            #profiles {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+                gap: 20px;
+                margin-right: 100px;
+                padding: 20px;
+            }
+            
+            .profile {
+                margin-bottom: 20px;
+                padding: 20px;
+                background-color: #ffffff;
+                border: 2px solid #007acc;
+                border-radius: 8px;
+                box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+                transition: transform 0.2s;
+            }
+            
+            .profile:hover {
+                transform: scale(1.02);
+                cursor: pointer;
+                box-shadow: -19px 14px 12px 3px rgba(0, 0, 0, 0.1);
+            }
+            
+            h2 {
+                color: #007acc;
+            }
+            
+            .addParagraph {
+                background-color: #007acc;
+                color: white;
+                border: none;
+                padding: 10px;
+                border-radius: 5px;
+                cursor: pointer;
+               
+            }
+            
+            .addParagraph:hover {
+                background-color: #005f99;
+             
+            }
+            
+            .delete-btn {
+                color: red;
+                cursor: pointer;
+                margin-left: 10px;
+            }
+    </style>
+</head>
+<body>
+    <div class="entete">
+        <h1>BIBLIOTH<span>EQUE</span></h1>
+    </div>
+    <div id="cherch">
+        <input type="text" id="searchInput"   placeholder="Rechercher un profil par nom ou IEN..." />
+        <button id="searchButton">Rechercher</button>
+        <button id="btnclose"><i  class="fa-solid fa-times"></i></button>
+    </div>
+    <div id="btn2" class="btn2">    <button id="ouvrbtn"><i id="btn3" class="fa-solid fa-search"></i><i id="btn4" class="fa-solid fa-user"></i></button>
+    </div>
+     <div class="navigation">
+        <div id="act" class="histo"><a href="index.html"><i class="fa-solid fa-user-group"></i><h3>élèv..</h3></a></div>
+        <div class="histo"><a href="affichage.html"><i class="fa-solid fa-clock-rotate-left"></i><h3>histo..</h3></a></div>
+        <div class="histo"><a   href="statistique.html"><i class="fa-solid fa-chart-simple"></i><h3>stati..</h3></a></div>
+    </div>
+    <div id="pastrouve" class="not-found">
+        <div class="emoji">😢</div>
+        <h1>Profil Non Trouvé !</h1>
+        <p>Désolé, mais le profil que vous recherchez n'est pas enregistré.</p>
+        <p>Essayez de vérifier l'orthographe ou de chercher un autre profil !</p>
+        <button class="button">Ok</button>
+    </div>
+    <div id="profiles"></div>
+    <button id="addProfile"><i class="fa-solid fa-plus"></i></button>
+
+    <script>
+        let modifications = JSON.parse(localStorage.getItem("modifications")) || [];
+        let paragraphCount = parseInt(localStorage.getItem("paragraphCount")) || 0;
+        let nombre33 = parseInt(localStorage.getItem("nombre")) || 0;
+
+        document.addEventListener('DOMContentLoaded', loadProfiles);
+
+        document.getElementById('addProfile').addEventListener('click', () => {
+            const prenom = prompt("Entrez le prénom :");
+            const nom = prompt("Entrez le nom :");
+             const ien = prompt("Entrez l'IEN :");
+            const classe = prompt("Entrez la classe :");
+            if (nom && prenom && ien) {
+                const profile = { nom, classe, prenom, ien, time: new Date().toLocaleString('fr-FR'), paragraphs: [] };
+                saveProfile(profile);
+                nombre();
+                displayProfile(profile);
+            } else {
+                alert("Tous les champs doivent être remplis !");
+            }
+        });
+
+        function saveProfile(profile) {
+            const profiles = JSON.parse(localStorage.getItem('profiles')) || [];
+            profiles.push(profile);
+            localStorage.setItem('profiles', JSON.stringify(profiles));
+        }
+
+        function loadProfiles() {
+            const profiles = JSON.parse(localStorage.getItem('profiles')) || [];
+            profiles.forEach(displayProfile);
+        }
+
+        function displayProfile(profile) {
+            const profileDiv = document.createElement('div');
+            profileDiv.classList.add('profile');
+            profileDiv.id = profile.ien;
+            profileDiv.innerHTML = `
+                <h2><u>Prénom</u> : ${profile.prenom} </h2>
+                <h2><u>Nom</u> : ${profile.nom}  </h2>
+                <h2><u>Classe</u> : ${profile.classe} </h2>
+                <h2><u>Ien</u> : ${profile.ien} </h2>
+                <button class="addParagraph"><i class="fa-solid fa-plus"></i></button>
+                <div class="paragraphs"></div>
+            `;
+            document.getElementById('profiles').appendChild(profileDiv);
+
+            // Afficher les paragraphes existants sans enregistrer de modification
+            profile.paragraphs.forEach(text => addParagraph(profileDiv, text));
+
+            profileDiv.querySelector('.addParagraph').addEventListener('click', () => {
+                const nlivre = prompt('Entrez le nom du livre : ');
+                const n0livre = prompt('Entrez le n° du livre : ');
+                const text = `Le livre ${nlivre} n° ${n0livre}`;
+                if (text) {
+                    paragraphCount++;
+                    addParagraph(profileDiv, text);
+                    localStorage.setItem("paragraphCount", paragraphCount);
+                    profile.paragraphs.push(text);
+                    recordModification(`${text} est emprunté par l'élève ${profileDiv.id}`);
+                    updateProfilesInStorage(profile);
+                } else {
+                    alert("Le champ ne peut pas être vide !");
+                }
+            });
+        }
+
+        function addParagraph(profileDiv, text) {
+            const paragraph = document.createElement('p');
+            paragraph.textContent = text;
+
+            const deleteBtn = document.createElement('span');
+            deleteBtn.textContent = 'rendre';
+            deleteBtn.classList.add('delete-btn');
+
+            deleteBtn.addEventListener('click', () => {
+                profileDiv.querySelector('.paragraphs').removeChild(paragraph);
+                const profileID = profileDiv.id;
+                recordModification(`${text} est rendu par l'élève ${profileID}`);
+
+                let profiles = JSON.parse(localStorage.getItem('profiles')) || [];
+                profiles = profiles.map(p => {
+                    if (p.ien === profileID) {
+                        p.paragraphs = p.paragraphs.filter(par => par !== text);
+                    }
+                    return p;
+                });
+                paragraphCount--;
+                localStorage.setItem("paragraphCount", paragraphCount);
+                localStorage.setItem('profiles', JSON.stringify(profiles));
+            });
+
+            paragraph.appendChild(deleteBtn);
+            profileDiv.querySelector('.paragraphs').appendChild(paragraph);
+        }
+
+        function updateProfilesInStorage(updatedProfile) {
+            const profiles = JSON.parse(localStorage.getItem('profiles')) || [];
+            const updatedProfiles = profiles.map(p => {
+                if (p.ien === updatedProfile.ien) {
+                    return updatedProfile;
+                }
+                return p;
+            });
+            localStorage.setItem('profiles', JSON.stringify(updatedProfiles));
+        }
+
+        function recordModification(action) {
+            const timestamp = new Date().toLocaleString('fr-FR');
+            const newEntry = { action, timestamp };
+
+            const exists = modifications.some(mod => mod.action === action && mod.timestamp === timestamp);
+            if (!exists) {
+                modifications.push(newEntry);
+                localStorage.setItem("modifications", JSON.stringify(modifications));
+            }
+        }
+
+        function nombre() {
+            nombre33++;
+            localStorage.setItem("nombre33", nombre33);
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            const act = document.getElementById('act');
+
+            // Réinitialisation de la bordure gauche lors du chargement de la page
+            act.style.borderLeft = '7px solid rgba(0, 0, 0, 0.993)';
+
+            const links = document.querySelectorAll('.histo a');
+            links.forEach(link => {
+                link.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    const url = this.href;
+
+                    // Supprime la bordure gauche
+                    act.style.borderLeft = 'none';
+
+                    // Supprime la classe active des autres éléments et ajoute à l'élément cliqué
+                    const currentActive = document.querySelector('.active');
+                    if (currentActive) {
+                        currentActive.classList.remove('active');
+                    }
+
+                    const parent = this.parentElement;
+                    parent.classList.add('active'); // Ajoute la classe active
+
+                    // Redirige après un délai
+                    setTimeout(() => {
+                        act.style.borderLeft='7px solid rgba(0, 0, 0, 0.993)';
+                        parent.classList.remove('active');
+                        window.location.href = url;
+                        
+                    }, 2000); // Délai de 2 secondes
+                });
+            });
+        });
+
+        document.getElementById('searchButton').addEventListener('click', function() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const profiles = document.querySelectorAll('.profile');
+            const pastrouve = document.getElementById('pastrouve');
+            const input = document.getElementById('searchInput');
+        
+            if (input.value.trim() === '') {
+                alert('Le champ est vide !'); // Action si l'élément est vide
+                pastrouve.style.display = 'none'; // Masquer le message si le champ est vide
+                return; // Arrêter l'exécution
+            }
+        
+            let found = false; // Variable pour suivre si un profil a été trouvé
+        
+            profiles.forEach(profile => {
+                const nom = profile.querySelector('h2:nth-of-type(1)').textContent.toLowerCase();
+                const prenom = profile.querySelector('h2:nth-of-type(2)').textContent.toLowerCase();
+                const classe = profile.querySelector('h2:nth-of-type(3)').textContent.toLowerCase();
+                const ien = profile.id.toLowerCase();
+                
+                if (nom.includes(query) || prenom.includes(query) || ien.includes(query) || classe.includes(query)) {
+                    profile.style.display = 'block';
+                    found = true; // Un profil correspondant a été trouvé
+                } else {
+                    profile.style.display = 'none';
+                }
+            });
+        
+            // Afficher ou masquer le message d'erreur en fonction du résultat
+            if (found) {
+                pastrouve.style.display = 'none'; // Au moins un profil trouvé
+            } else {
+                pastrouve.style.display = 'block'; // Aucun profil trouvé
+            }
+        });
+        document.getElementById('btnclose').addEventListener('click', function(){
+            const bar=document.getElementById('cherch');
+            bar.style.display='none';
+            window.location.reload();
+            const ouvr=document.getElementById('btn2');
+            ouvr.style.display='flex'; 
+        })
+        
+
+
+        document.getElementById('ouvrbtn').addEventListener('click',function(){
+            const bar=document.getElementById('cherch');
+            const input=document.getElementById('searchInput');
+            bar.style.display='block';
+            const position = bar.getBoundingClientRect().top + window.pageYOffset;
+  input.focus();
+            window.scrollTo({
+                top: position,
+                behavior: 'smooth'
+              });
+            const ouvr=document.getElementById('btn2');
+            ouvr.style.display='none'; 
+        })
+
+        const input=document.getElementById('searchInput');
+        input.addEventListener('keydown', (event) => {
+            const input=document.getElementById('searchInput');
+button=document.getElementById('searchButton');
+            if (event.key === 'Enter') {
+                button.click(); // Simule le clic sur le bouton
+            }
+        });
+
+        document.querySelector('.button').addEventListener('click',function(){
+            window.location.reload();
+        })
+    </script>
+</body>
+</html>

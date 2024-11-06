@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Graphique des Profils et Emprunts</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+          
+            height: 100vh;
+            background-color: #f9f9f9;
+        }
+        canvas {
+            max-width: 800px;
+            width: 100%;
+            height: 400px;
+        }
+     
+        i{
+         font-size: xx-large;
+         font-weight: 800;
+        }
+        button{
+         border: none;
+         background-color: transparent;
+        }
+        .tout{
+         width: 100%;
+         display: grid;
+         grid-template-columns: 1fr 1fr;
+         gap: 20px;
+
+        }
+        .tout div {
+         text-align: center;
+        }
+        #num1{
+         border: 7px solid rgba(75, 192, 192, 1);
+        }
+        #l1{
+         border: 7px solid rgba(153, 102, 255, 1);
+        }
+        .grph{
+         width: 100%;
+         height: max-content;
+         text-align: center;
+         justify-content: center;
+         margin: auto;
+         align-items: center;
+         display: flex;
+         flex-direction: column;
+        }
+        .btn{
+         width: 100%;
+         position: sticky;
+         top: 0px;
+         background-color: mintcream;
+         display: flex;
+          margin-bottom: 10px;
+          border-bottom: 1px solid #271bdf;
+          padding: 20px;
+        }
+        .btn h1{
+            margin: auto;
+        }
+        #num1 , #l1{
+         padding-top: 8px;
+         border-radius: 50%;
+     
+        
+         height: 50px;
+         width: 60px;
+         text-align: center;
+         margin: auto;
+        }
+    </style>
+</head>
+<body>
+   <div class="btn"><button onclick="goBack()"><i class="fa-solid fa-arrow-left"></i></button><h1>Statistiques</h1></div>
+   <div class="tout"><div ><h1>NOMBRE D' ELEVES :</h1><h1  id="num1"></h1></div> <div ><h1> LIVRES NON RENDUS :</h1><h1 id="l1"></h1></div></div>
+ <div class="grph">   <canvas id="myChart"></canvas>
+   <canvas id="growthChart"></canvas></div>
+ 
+    <script>
+         // Récupération des valeurs depuis localStorage
+         const nombre = parseInt(localStorage.getItem("nombre33")) || 0 ;
+         const n1 = parseInt(localStorage.getItem("paragraphCount")) || 0;
+        // Fonction pour obtenir les comptes mensuels
+        function getMonthlyCounts(data, dateKey) {
+         const counts = {};
+         data.forEach(item => {
+             const dateParts = item[dateKey].split(' '); // Séparer date et heure
+             const date = new Date(dateParts[0]); // Prendre uniquement la date
+             if (!isNaN(date)) { // Vérifie si la date est valide
+                 const month = date.toLocaleString('default', { month: 'short', year: 'numeric' });
+                 counts[month] = (counts[month] || 0) + 1;
+             } else {
+                 console.error('Date invalide pour l\'élément:', item);
+             }
+         });
+     
+         const currentMonth = new Date().toLocaleString('default', { month: 'short', year: 'numeric' });
+         if (!counts[currentMonth]) {
+             counts[currentMonth] = 0;
+         }
+     
+         return counts;
+     }
+
+
+     function getMonthlyCounts(data, dateKey) {
+      const counts = {};
+      data.forEach(item => {
+          const date = parseDate(item[dateKey]); // Utiliser la fonction de parse
+          if (!isNaN(date)) {
+              const month = date.toLocaleString('default', { month: 'short', year: 'numeric' });
+              counts[month] = (counts[month] || 0) + 1;
+          } else {
+              console.error('Date invalide pour l\'élément:', item);
+          }
+      });
+  
+      const currentMonth = new Date().toLocaleString('default', { month: 'short', year: 'numeric' });
+      if (!counts[currentMonth]) {
+          counts[currentMonth] = 0;
+      }
+  
+      return counts;
+  }
+     function parseDate(dateString) {
+      const parts = dateString.split(' ')[0].split('/'); // Séparer date et temps
+      return new Date(`${parts[2]}-${parts[1]}-${parts[0]}T00:00:00`); // Format ISO
+  }
+     
+         
+        // Récupération des données
+        const profiles = JSON.parse(localStorage.getItem('profiles')) || [];
+        const modifications = JSON.parse(localStorage.getItem('modifications')) || [];
+
+        // Comptage des créations de profils
+        const profileCounts = getMonthlyCounts(profiles, 'time');
+        const borrowCounts = getMonthlyCounts(modifications.filter(mod => mod.action.includes('emprunté')), 'timestamp');
+
+        // Préparation des données pour le graphique
+        const labels = Object.keys(profileCounts);
+        const profileData = labels.map(label => profileCounts[label] || 0);
+        const borrowData = labels.map(label => borrowCounts[label] || 0);
+
+        // Création du graphique
+        const ctx = document.getElementById('growthChart').getContext('2d');
+        const growthChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Profils Créés',
+                        data: profileData,
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        fill: false
+                    },
+                    {
+                        label: 'Livres Empruntés',
+                        data: borrowData,
+                        borderColor: 'rgba(153, 102, 255, 1)',
+                        fill: false
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                    },
+                    title: {
+                        display: true,
+                        text: 'Évolution des Profils et des Emprunts'
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Mois'
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Nombre'
+                        }
+                    }
+                }
+            }
+        });
+
+       
+ 
+         // Affichage des valeurs sur la page
+         const container = document.getElementById('num1');
+         container.textContent = ` ${nombre}`;
+         
+         const l1 = document.getElementById('l1');
+         l1.textContent = `${n1}`;
+ 
+         // Création du graphique
+         const ctx1 = document.getElementById('myChart').getContext('2d');
+         const myChart = new Chart(ctx1, {
+             type: 'bar',
+             data: {
+                 labels: ['Élèves enregistrès', 'Livres non rendus'],
+                 datasets: [{
+                     label: 'Nombre',
+                     data: [nombre, n1], // Utilisation des valeurs récupérées
+                     backgroundColor: [
+                         'rgba(75, 192, 192, 0.6)',
+                         'rgba(153, 102, 255, 0.6)'
+                     ],
+                     borderColor: [
+                         'rgba(75, 192, 192, 1)',
+                         'rgba(153, 102, 255, 1)'
+                     ],
+                     borderWidth: 1
+                 }]
+             },
+             options: {
+                 responsive: true,
+                 plugins: {
+                     legend: {
+                         display: true,
+                         position: 'top',
+                     },
+                     title: {
+                         display: true,
+                         text: '   Statistiques   ',
+                     },
+                     tooltip: {
+                         callbacks: {
+                             label: (tooltipItem) => {
+                                 return ` ${tooltipItem.dataset.label}: ${tooltipItem.raw}`;
+                             }
+                         }
+                     }
+                 },
+                 scales: {
+                     x: {
+                         title: {
+                             display: true,
+                             text: 'Nombre d\' éleves        et          nombre de livres '
+                         }
+                     },
+                     y: {
+                         beginAtZero: true,
+                         title: {
+                             display: true,
+                             text: 'Nombre'
+                         }
+                     }
+                 }
+             }
+         });
+
+         function goBack() {
+            window.history.back();
+        }
+    </script>
+</body>
+</html>
